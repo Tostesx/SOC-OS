@@ -128,3 +128,18 @@ SOC-OS/
 ├── branding/          # Identidade visual (ASCII art, /etc/issue)
 ├── tests/             # Scripts e arquivos para testes em máquinas virtuais
 └── docs/              # Documentação técnica, arquitetura e roadmap
+```
+## 💻 Como instalar (Ambiente de Desenvolvimento)
+
+*Nota: O projeto está em estágio Alpha. Recomenda-se o uso em Máquinas Virtuais (VirtualBox ou QEMU/KVM) com UEFI habilitado.*
+
+1. Inicie uma máquina virtual com a ISO oficial do Arch Linux (em modo UEFI).
+2. No terminal do Arch ISO, digite as seguintes instruções:
+   ```bash
+   loadkeys br-abnt2
+   pacman -Sy git
+   git clone https://github.com/Tostesx/SOC-OS.git
+   cd SOC-OS
+   chmod +x installer/soc-install.sh
+   ./installer/soc-install.sh
+   ```
