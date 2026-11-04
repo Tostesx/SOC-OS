@@ -72,7 +72,7 @@ cat >> /etc/pacman.conf <<PACMAN
 
 [soc]
 SigLevel = Optional TrustAll
-Server = http://10.0.2.2:8000/packages/repo
+Server = https://raw.githubusercontent.com/Tostesx/SOC-OS/main/packages/repo
 PACMAN
 
 echo ">>> Criando usuario soc..."
