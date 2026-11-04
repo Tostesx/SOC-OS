@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOC_HOME="${HOME}/.soc"
+SOC_LOG="${SOC_HOME}/log"
+mkdir -p "$SOC_HOME"
+
+RST=$'\e[0m'; FG=$'\e[32m'; DIM=$'\e[2m'; HL=$'\e[7m'
+
+log() { printf '[%s] %s\n' "$(date -Iseconds)" "$*" >> "$SOC_LOG"; }
+pausa() { read -rp "Enter para voltar... " _; }
+
+header() {
+    clear
+    printf '%s' "$FG"
+    cat <<'EOF'
+┌─────────────────────────────────────────────┐
+│  SOC — SISTEMA OPERACIONAL DE CONTROLE      │
+│  v0.2 · TTY · INDUSTRIAL                    │
+└─────────────────────────────────────────────┘
+EOF
+}
+
+menu() {
+    local sel=$1
+    local -a itens=(
+        "1  Desenvolvedor"
+        "2  Industrial"
+        "3  Navegador Web"
+        "4  Internet        (cabo / wifi / autoconectar)"
+        "5  IntraChat       (mensagens na LAN)"
+        "6  Arquivos        (/home)"
+        "7  Bash Livre"
+        "8  Sistema         (temp / disco / atualizacoes)"
+        "0  Energia         (desligar / reiniciar / suspender)"
+    )
+    for i in "${itens[@]}"; do
+        if [[ "${i:0:1}" == "$sel" ]]; then
+            printf '%s ▶ %s %s\n' "$HL" "$i" "$RST"
+        else
+            printf '   %s\n' "$i"
+        fi
+    done
+}
+
+confirmar() {
+    printf '%s%s [s/N]: %s' "$FG" "$1" "$RST"
+    read -rn1 r; echo
+    [[ $r =~ ^[sSyY]$ ]]
+}
+
+ferramenta() {
+    if command -v "$1" &>/dev/null; then "$@"
+    else printf 'Ferramenta ausente: %s\n' "$1"; fi
+    pausa
+}
+
+web() {
+    local url; read -rp "URL: " url
+    for b in browsh w3m lynx; do
+        if command -v "$b" &>/dev/null; then "$b" "$url"; break; fi
+    done
+    pausa
+}
+
+internet() {
+    while true; do
+        clear
+        echo "── INTERNET ──"
+        nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device 2>/dev/null | sed 's/^/    /'
+        echo
+        echo "  1) Conectar / trocar rede"
+        echo "  2) Editar conexoes"
+        echo "  3) Ativar / desativar wifi"
+        echo "  4) Autoconectar (on/off)"
+        echo "  0) Voltar"
+        read -rsn1 o; echo
+        case $o in
+            1) nmtui-connect ;;
+            2) nmtui-edit ;;
+            3) est=$(nmcli radio wifi)
+               if [[ $est == enabled ]]; then nmcli radio wifi off; else nmcli radio wifi on; fi
+               log "internet: wifi -> $(nmcli radio wifi)" ;;
+            4) autoconnect_menu ;;
+            0) return ;;
+        esac
+    done
+}
+
+autoconnect_menu() {
+    mapfile -t conns < <(nmcli -t -f NAME,TYPE connection show | grep -v '^lo:')
+    if (( ${#conns[@]} == 0 )); then echo "Nenhuma conexao salva."; pausa; return; fi
+    PS3="Conexao: "
+    select c in "${conns[@]}" "Voltar"; do
+        [[ $c == Voltar || -z $c ]] && return
+        nome="${c%%:*}"
+        atual=$(nmcli -g connection.autoconnect connection show "$nome")
+        if [[ $atual == yes ]]; then
+            nmcli connection modify "$nome" connection.autoconnect no
+            echo "'$nome' NAO autoconecta mais."
+        else
+            nmcli connection modify "$nome" connection.autoconnect yes
+            echo "'$nome' VAI autoconectar."
+        fi
+        log "internet: autoconnect '$nome' = $(nmcli -g connection.autoconnect connection show "$nome")"
+        pausa; return
+    done
+}
+
+intrachat() {
+    clear
+    echo "── INTRACHAT (LAN) ──"
+    if command -v avahi-browse &>/dev/null; then
+        echo "  Pares na rede:"
+        timeout 2 avahi-browse -at 2>/dev/null | grep -i irc | sed 's/^/    /' || true
+        echo
+    fi
+    echo "  1) Abrir cliente (weechat)"
+    echo "  2) Iniciar servidor local (ngircd)"
+    echo "  3) Chat P2P (soc-chat, se instalado)"
+    echo "  0) Voltar"
+    read -rsn1 o; echo
+    case $o in
+        1) weechat ;;
+        2) sudo systemctl enable --now ngircd && echo "ngircd ativo" && pausa ;;
+        3) if command -v soc-chat &>/dev/null; then soc-chat; else echo "soc-chat nao instalado."; pausa; fi ;;
+        0) return ;;
+    esac
+}
+
+industrial() {
+    clear
+    echo "── INDUSTRIAL ──"
+    echo "  1) arduino-cli version"
+    echo "  2) cobc --version (GnuCOBOL)"
+    echo "  3) beremiz (GUI, requer X)"
+    echo "  0) Voltar"
+    read -rsn1 o; echo
+    case $o in
+        1) arduino-cli version 2>/dev/null || echo "nao instalado" ;;
+        2) cobc --version       2>/dev/null || echo "nao instalado" ;;
+        3) echo "Beremiz exige ambiente grafico." ;;
+        0) return ;;
+    esac
+    pausa
+}
+
+sistema() {
+    while true; do
+        clear
+        echo "── SISTEMA ──"
+        echo "  1) Temperatura"
+        echo "  2) Espaco em disco"
+        echo "  3) Atualizacoes (pacman -Syu)"
+        echo "  4) Atualizacoes automaticas (on/off)"
+        echo "  0) Voltar"
+        read -rsn1 o; echo
+        case $o in
+            1) sensors 2>/dev/null || echo "lm-sensors: rode 'sudo sensors-detect'"; pausa ;;
+            2) df -h / /home 2>/dev/null; pausa ;;
+            3) sudo pacman -Syu; pausa ;;
+            4) auto_updates ;;
+            0) return ;;
+        esac
+    done
+}
+
+auto_updates() {
+    local unit="soc-updates.timer"
+    if systemctl is-enabled --quiet "$unit" 2>/dev/null; then
+        sudo systemctl disable --now "$unit"
+        echo "Atualizacoes automaticas DESATIVADAS."
+    else
+        if sudo systemctl enable --now "$unit" 2>/dev/null; then
+            echo "Atualizacoes automaticas ATIVADAS."
+        else
+            echo "Timer $unit nao encontrado."
+        fi
+    fi
+    log "sistema: auto-updates -> $(systemctl is-enabled "$unit" 2>/dev/null || echo off)"
+    pausa
+}
+
+energia() {
+    while true; do
+        clear
+        echo "── ENERGIA ──"
+        echo "  1) Desligar"
+        echo "  2) Reiniciar"
+        echo "  3) Suspender"
+        echo "  0) Voltar"
+        read -rsn1 o; echo
+        case $o in
+            1) confirmar "Desligar o SOC?"   && { log "energia: poweroff"; sudo systemctl poweroff; } ;;
+            2) confirmar "Reiniciar o SOC?"  && { log "energia: reboot";   sudo systemctl reboot; } ;;
+            3) confirmar "Suspender o SOC?"  && { log "energia: suspend";  sudo systemctl suspend; } ;;
+            0) return ;;
+        esac
+    done
+}
+
+acao() {
+    case "$1" in
+        1) log "menu:dev";        ferramenta vim ;;
+        2) log "menu:industrial"; industrial ;;
+        3) log "menu:web";        web ;;
+        4) log "menu:internet";   internet ;;
+        5) log "menu:intrachat";  intrachat ;;
+        6) log "menu:arquivos";   ( cd "$HOME" && bash ) ;;
+        7) log "menu:bash";       bash ;;
+        8) log "menu:sistema";    sistema ;;
+        0) log "menu:energia";    energia ;;
+    esac
+}
+
+sel=""
+while true; do
+    header
+    menu "$sel"
+    printf '\n%sSelecione [0-9]: %s' "$DIM" "$RST"
+    read -rsn1 sel
+    [[ -z "$sel" ]] && continue
+    acao "$sel"
+done

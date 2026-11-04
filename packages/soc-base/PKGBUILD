@@ -1,0 +1,32 @@
+# Maintainer: TostesX <tostesx@soc.local>
+pkgname=soc-base
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="SOC - meta-pacote base (menu TUI, autologin, servicos essenciais)"
+arch=('x86_64')
+url="https://github.com/tostesx/SOC-OS"
+license=('GPL-2.0-only')
+groups=('soc')
+depends=(
+  'base' 'base-devel'
+  'linux-firmware'
+  'tmux' 'vim' 'fzf' 'less' 'nano'
+  'lm_sensors' 'procps-ng'
+  'networkmanager' 'avahi' 'nss-mdns'
+  'w3m' 'lynx'
+)
+optdepends=(
+  'browsh: navegador grafico renderizado no terminal (requer firefox)'
+  'soc-chat: chat P2P proprio (em desenvolvimento)'
+  'linux-lts: kernel de producao (recomendado em paralelo ao linux)'
+  'weechat: cliente de chat para o IntraChat'
+  'linux-lts: kernel de producao (recomendado em paralelo ao linux)'
+)
+backup=('etc/skel/.bash_profile' 'etc/skel/.tmux.conf')
+install=soc-base.install
+source=()
+sha256sums=()
+
+package() {
+  cp -a "/home/tostesx/SOC-OS/overlay/." "${pkgdir}/"
+}

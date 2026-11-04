@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+temp=$(sensors 2>/dev/null | awk '/Package id 0|Tctl|Composite/{print $2; exit}')
+ram=$(free -h | awk '/^Mem:/{print $3"/"$2}')
+load=$(cut -d' ' -f1 /proc/loadavg)
+printf 'TEMP %s | RAM %s | LOAD %s | %s' "${temp:-n/a}" "$ram" "$load" "$(date +%H:%M)"

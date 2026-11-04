@@ -1,0 +1,29 @@
+post_install() {
+  echo ">>> SOC-BASE: pos-instalacao"
+  systemctl enable NetworkManager.service 2>/dev/null || true
+  systemctl enable avahi-daemon.service   2>/dev/null || true
+
+  if id soc &>/dev/null; then
+    install -d -m 755 /etc/systemd/system/getty@tty1.service.d
+    cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'INNER'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin soc --noclear %I $TERM
+INNER
+    systemctl daemon-reload
+    echo ">>> Autologin configurado para usuario 'soc'."
+  else
+    echo ">>> AVISO: usuario 'soc' nao existe."
+    echo ">>> Crie com: useradd -m -G wheel -s /bin/bash soc"
+    echo ">>> Depois: systemctl daemon-reload"
+  fi
+  echo ">>> Teste o menu com: soc-menu"
+}
+
+post_upgrade() { post_install; }
+
+pre_remove() {
+  rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
+  rmdir /etc/systemd/system/getty@tty1.service.d 2>/dev/null || true
+  systemctl daemon-reload
+}
