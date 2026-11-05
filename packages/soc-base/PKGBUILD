@@ -1,7 +1,7 @@
 # Maintainer: TostesX <tostesx@soc.local>
 pkgname=soc-base
 pkgver=0.1.0
-pkgrel=11
+pkgrel=12
 pkgdesc="SOC - meta-pacote base (menu TUI, autologin, servicos essenciais)"
 arch=('x86_64')
 url="https://github.com/tostesx/SOC-OS"
