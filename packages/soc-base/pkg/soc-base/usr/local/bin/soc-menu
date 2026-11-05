@@ -56,6 +56,7 @@ animar_logo() {
 header() {
     clear
     printf '%s' "$FG"
+    # Centraliza a caixa do cabeçalho
     local cols=$(tput cols 2>/dev/null || echo 80)
     local pad=$(( (cols - 45) / 2 ))
     if [[ $pad -lt 0 ]]; then pad=0; fi
@@ -75,14 +76,14 @@ menu() {
         "1  Desenvolvedor"
         "2  Industrial"
         "3  Navegador Web"
-        "4  Internet        (cabo / wifi / autoconectar)"
-        "5  IntraChat       (mensagens na LAN)"
-        "6  Arquivos        (/home)"
-        "7  Bash Livre"
-        "8  Sistema         (temp / disco / atualizacoes)"
+        "4  IntraChat       (mensagens na LAN)"
+        "5  Arquivos        (/home)"
+        "6  Bash Livre"
+        "7  Sistema         (temp / disco / internet / atualizacoes)"
         "0  Energia         (desligar / reiniciar / suspender)"
     )
     
+    # Centraliza o menu baseado na largura do terminal
     local cols=$(tput cols 2>/dev/null || echo 80)
     local block_width=52
     local pad=$(( (cols - block_width) / 2 ))
@@ -111,10 +112,124 @@ ferramenta() {
 }
 
 web() {
-    local url; read -rp "URL: " url
-    for b in browsh w3m lynx; do
-        if command -v "$b" &>/dev/null; then "$b" "$url"; break; fi
-    done
+    clear
+    echo "╔═════════════════════════════════════════════╗"
+    echo "║               NAVEGADOR SOC                 ║"
+    echo "╚═════════════════════════════════════════════╝"
+    echo "  (Dica: Use Ctrl+K a qualquer momento para sair)"
+
+    # 1. BARRA DE URL E BUSCA INTELIGENTE
+    echo ""
+    echo -n "  [ URL / BUSCA ] > "
+    read -r entrada
+
+    [[ -z "$entrada" ]] && return
+
+    # Se a entrada tiver espaços ou não tiver um ponto, é uma busca.
+    # Usamos o DuckDuckGo HTML que funciona perfeitamente no terminal.
+    if [[ "$entrada" == *" "* || "$entrada" != *.* ]]; then
+        echo "  Buscando por: $entrada"
+        # Transforma espaços em '+'
+        query="${entrada// /+}"
+        url="https://html.duckduckgo.com/html/?q=$query"
+    else
+        # É um site direto. Se não tiver http, adiciona.
+        if [[ "$entrada" != http* ]]; then
+            url="https://$entrada"
+        else
+            url="$entrada"
+        fi
+    fi
+
+    # 2. PROCESSAMENTO (Mostra o título da página)
+    echo ""
+    echo -n "  Carregando..."
+    title=$(curl -sL --max-time 5 "$url" | grep -oP '(?<=<title>).*?(?=</title>)' | head -1)
+    echo -e "\r  Página: ${title:-Desconhecida ou Sem Título}                    "
+    echo ""
+
+    # 3. MENU DE AÇÕES (Meio)
+    local opcoes=(
+        "📄 Ler a página (Texto puro via w3m)"
+        "🔗 Extrair Links da página"
+        "🖼️  Ver Imagens desta página"
+        "🎬 Ver Vídeos desta página"
+        "🔍 Fazer nova busca / digitar outra URL"
+        "🚪 Sair para o Bash"
+    )
+
+    local escolha
+    escolha=$(printf "%s\n" "${opcoes[@]}" | fzf --height=12 --prompt="  Ação > " --reverse --header="  [ MENU DE AÇÕES ]" --bind 'ctrl-k:abort,esc:abort')
+
+    # Se o usuário apertar ESC, Ctrl+K ou escolher sair
+    if [[ -z "$escolha" || "$escolha" == *"Sair"* ]]; then
+        return
+    fi
+
+    # 4. EXECUÇÃO
+    case "$escolha" in
+        *"Ler a página"*)
+            w3m "$url"
+            ;;
+        *"Extrair Links"*)
+            clear
+            echo "  Extraindo links de $url ..."
+            local links
+            links=$(curl -sL "$url" | grep -oP 'href="\K[^"]+' | grep -E '^https?://' | sort -u | head -30)
+
+            if [[ -z "$links" ]]; then
+                echo "  Nenhum link externo encontrado."
+            else
+                local link_escolhido
+                link_escolhido=$(echo "$links" | fzf --height=15 --prompt="  Link > " --reverse --bind 'ctrl-k:abort,esc:abort')
+                if [[ -n "$link_escolhido" ]]; then
+                    # Abre o link escolhido no w3m
+                    w3m "$link_escolhido"
+                fi
+            fi
+            ;;
+        *"Ver Imagens"*)
+            clear
+            echo "  Extraindo imagens da página..."
+            local imgs
+            imgs=$(curl -sL --max-time 5 "$url" | grep -oP 'https?://[^"'"'"']+\.(jpg|jpeg|png|gif|webp)' | sort -u | head -20)
+
+            if [[ -z "$imgs" ]]; then
+                echo "  Nenhuma imagem direta encontrada."
+            else
+                local img_escolhida
+                img_escolhida=$(echo "$imgs" | fzf --height=12 --prompt="  Imagem > " --reverse --bind 'ctrl-k:abort,esc:abort')
+                if [[ -n "$img_escolhida" ]]; then
+                    clear
+                    echo "  Renderizando imagem (Ctrl+K para sair)..."
+                    curl -sL --max-time 5 "$img_escolhida" | chafa -f symbols --size=80x40 -
+                fi
+            fi
+            ;;
+        *"Ver Vídeos"*)
+            clear
+            echo "  Procurando vídeos diretos..."
+            local vids
+            vids=$(curl -sL --max-time 5 "$url" | grep -oP 'https?://[^"'"'"']+\.(mp4|webm|mkv)' | sort -u)
+
+            if [[ -z "$vids" ]]; then
+                echo "  Nenhum vídeo direto (mp4/webm) encontrado. (Sites como YouTube usam players dinâmicos)."
+            else
+                local vid_escolhido
+                vid_escolhido=$(echo "$vids" | fzf --height=12 --prompt="  Vídeo > " --reverse --bind 'ctrl-k:abort,esc:abort')
+                if [[ -n "$vid_escolhido" ]]; then
+                    clear
+                    echo "  Reproduzindo vídeo (Ctrl+K para sair)..."
+                    mpv --vo=tct "$vid_escolhido" 2>/dev/null || echo "Falha ao reproduzir."
+                fi
+            fi
+            ;;
+        *"Fazer nova busca"*)
+            web # Chama a função novamente para reiniciar
+            return
+            ;;
+    esac
+
     pausa
 }
 
@@ -206,8 +321,9 @@ sistema() {
         echo "── SISTEMA ──"
         echo "  1) Temperatura"
         echo "  2) Espaco de RAM e Disco"
-        echo "  3) Atualizacoes (pacman -Syu)"
-        echo "  4) Atualizacoes automaticas (on/off)"
+        echo "  3) Internet        (cabo / wifi / autoconectar)"
+        echo "  4) Atualizacoes (pacman -Syu)"
+        echo "  5) Atualizacoes automaticas (on/off)"
         echo "  0) Voltar"
         read -rsn1 o; echo
         case $o in
@@ -220,8 +336,9 @@ sistema() {
                df -h / /home 2>/dev/null
                pausa
                ;;
-            3) sudo pacman -Syu; pausa ;;
-            4) auto_updates ;;
+            3) internet ;;
+            4) sudo pacman -Syu; pausa ;;
+            5) auto_updates ;;
             0) return ;;
         esac
     done
@@ -266,16 +383,16 @@ acao() {
         1) log "menu:dev";        ferramenta vim ;;
         2) log "menu:industrial"; industrial ;;
         3) log "menu:web";        web ;;
-        4) log "menu:internet";   internet ;;
-        5) log "menu:intrachat";  intrachat ;;
-        6) log "menu:arquivos";   ( cd "$HOME" && bash ) ;;
-        7) log "menu:bash";       bash ;;
-        8) log "menu:sistema";    sistema ;;
+        4) log "menu:intrachat";  intrachat ;;
+        5) log "menu:arquivos";   ( cd "$HOME" && bash ) ;;
+        6) log "menu:bash";       bash ;;
+        7) log "menu:sistema";    sistema ;;
         0) log "menu:energia";    energia ;;
     esac
 }
 
-# --- Lógica de inicialização com Splash Screen ---
+# --- NOVO: Lógica de inicialização com Splash Screen ---
+# Se a variável SOC_BOOTED não existir, mostra a animação.
 if [[ -z "${SOC_BOOTED:-}" ]]; then
     animar_logo
     export SOC_BOOTED=1
@@ -287,12 +404,12 @@ while true; do
     menu "$sel"
     
     # Centraliza o texto "Selecione"
-    t_cols=$(tput cols 2>/dev/null || echo 80)
-    t_pad=$(( (t_cols - 52) / 2 ))
-    if [[ $t_pad -lt 0 ]]; then t_pad=0; fi
-    t_pad_str=$(printf "%${t_pad}s" "")
+    cols=$(tput cols 2>/dev/null || echo 80)
+    pad=$(( (cols - 52) / 2 ))
+    if [[ $pad -lt 0 ]]; then pad=0; fi
+    pad_str=$(printf "%${pad}s" "")
     
-    printf '\n%s%sSelecione [0-9]: %s' "$t_pad_str" "$DIM" "$RST"
+    printf '\n%s%sSelecione [0-9]: %s' "$pad_str" "$DIM" "$RST"
     read -rsn1 sel
     [[ -z "$sel" ]] && continue
     acao "$sel"

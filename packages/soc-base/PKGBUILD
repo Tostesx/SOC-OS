@@ -28,5 +28,5 @@ source=()
 sha256sums=()
 
 package() {
-  cp -a "/home/tostesx/SOC-OS/overlay/." "${pkgdir}/"
+  cp -a "/home/tostesx/Documentos/GitHub/SOC-OS/overlay/." "${pkgdir}/"
 }
