@@ -4,6 +4,7 @@ post_install() {
   systemctl enable avahi-daemon.service   2>/dev/null || true
 
   if id soc &>/dev/null; then
+    # 1. Configura o Autologin no systemd
     install -d -m 755 /etc/systemd/system/getty@tty1.service.d
     cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'INNER'
 [Service]
@@ -12,6 +13,16 @@ ExecStart=-/sbin/agetty --autologin soc --noclear %I $TERM
 INNER
     systemctl daemon-reload
     echo ">>> Autologin configurado para usuario 'soc'."
+
+    # 2. A Automação: Garante que o .bash_profile e .tmux.conf estão na pasta do usuário
+    # Isso resolve o problema de o usuário ter sido criado antes do pacote.
+    if [ ! -f /home/soc/.bash_profile ] || ! grep -q "soc-menu" /home/soc/.bash_profile; then
+        cp /etc/skel/.bash_profile /home/soc/.bash_profile
+        cp /etc/skel/.tmux.conf /home/soc/.tmux.conf
+        chown soc:soc /home/soc/.bash_profile /home/soc/.tmux.conf
+        echo ">>> Arquivos de inicializacao copiados para /home/soc/"
+    fi
+
   else
     echo ">>> AVISO: usuario 'soc' nao existe."
     echo ">>> Crie com: useradd -m -G wheel -s /bin/bash soc"
@@ -20,7 +31,9 @@ INNER
   echo ">>> Teste o menu com: soc-menu"
 }
 
-post_upgrade() { post_install; }
+post_upgrade() {
+  post_install;
+}
 
 pre_remove() {
   rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf

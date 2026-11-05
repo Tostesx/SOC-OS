@@ -3,10 +3,10 @@
 pkgname = soc-base
 pkgbase = soc-base
 xdata = pkgtype=pkg
-pkgver = 0.1.0-10
+pkgver = 0.1.0-11
 pkgdesc = SOC - meta-pacote base (menu TUI, autologin, servicos essenciais)
 url = https://github.com/tostesx/SOC-OS
-builddate = 1793897153
+builddate = 1793902588
 packager = Unknown Packager
 size = 10274
 arch = x86_64
