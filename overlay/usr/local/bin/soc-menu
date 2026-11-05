@@ -10,14 +10,63 @@ RST=$'\e[0m'; FG=$'\e[32m'; DIM=$'\e[2m'; HL=$'\e[7m'
 log() { printf '[%s] %s\n' "$(date -Iseconds)" "$*" >> "$SOC_LOG"; }
 pausa() { read -rp "Enter para voltar... " _; }
 
+# --- INÍCIO DA LOGO E ANIMAÇÃO ---
+SOC_LOGO=(
+"                       ##                       "
+"                      +++#                      "
+"                      #+++                      "
+"                     #++++#                     "
+"                    #++++++#                    "
+"                    #+++++++-                   "
+"                 #####++++#+##                  "
+"                #+##+#+#####++#+                "
+"             ##+++###+####+#+#++#               "
+"            ##+###+++++++##+##++++#             "
+"       ##+++#+++###++#+###++#+##+++#++###       "
+" ###+++++++++#+++####++#####+###++#+++++++++##+ "
+"     ###+++++###++###########++++#++++++##      "
+"          +#+++###+++#+++++++##+#++#+           "
+"            #++##++++###+++###+#+++##           "
+"              ##+#+++++####+#####+              "
+"                   #+++++++++                   "
+"                    #++++++#                    "
+"                     #++++#                     "
+"                      #+++                      "
+"                      #++#                      "
+"                       ##                       "
+"                        #                       "
+)
+
+animar_logo() {
+    clear
+    printf '%s' "$FG"
+    local cols=$(tput cols 2>/dev/null || echo 80)
+    local pad=$(( (cols - 48) / 2 ))
+    if [[ $pad -lt 0 ]]; then pad=0; fi
+    local pad_str=$(printf "%${pad}s" "")
+
+    for line in "${SOC_LOGO[@]}"; do
+        printf "%s%s\n" "$pad_str" "$line"
+        sleep 0.04
+    done
+    sleep 0.5
+}
+# --- FIM DA LOGO E ANIMAÇÃO ---
+
 header() {
     clear
     printf '%s' "$FG"
-    cat <<'EOF'
-┌─────────────────────────────────────────────┐
-│  SOC — SISTEMA OPERACIONAL DE CONTROLE      │
-│  v0.2 · TTY · INDUSTRIAL                    │
-└─────────────────────────────────────────────┘
+    # Centraliza a caixa do cabeçalho
+    local cols=$(tput cols 2>/dev/null || echo 80)
+    local pad=$(( (cols - 45) / 2 ))
+    if [[ $pad -lt 0 ]]; then pad=0; fi
+    local pad_str=$(printf "%${pad}s" "")
+    
+    cat <<EOF
+${pad_str}┌─────────────────────────────────────────────┐
+${pad_str}│  SOC — SISTEMA OPERACIONAL DE CONTROLE      │
+${pad_str}│  v0.2 · TTY · INDUSTRIAL                    │
+${pad_str}└─────────────────────────────────────────────┘
 EOF
 }
 
@@ -34,11 +83,19 @@ menu() {
         "8  Sistema         (temp / disco / atualizacoes)"
         "0  Energia         (desligar / reiniciar / suspender)"
     )
+    
+    # Centraliza o menu baseado na largura do terminal
+    local cols=$(tput cols 2>/dev/null || echo 80)
+    local block_width=52
+    local pad=$(( (cols - block_width) / 2 ))
+    if [[ $pad -lt 0 ]]; then pad=0; fi
+    local pad_str=$(printf "%${pad}s" "")
+
     for i in "${itens[@]}"; do
         if [[ "${i:0:1}" == "$sel" ]]; then
-            printf '%s ▶ %s %s\n' "$HL" "$i" "$RST"
+            printf '%s%s ▶ %s %s\n' "$pad_str" "$HL" "$i" "$RST"
         else
-            printf '   %s\n' "$i"
+            printf '%s   %s \n' "$pad_str" "$i"
         fi
     done
 }
@@ -150,14 +207,21 @@ sistema() {
         clear
         echo "── SISTEMA ──"
         echo "  1) Temperatura"
-        echo "  2) Espaco em disco"
+        echo "  2) Espaco de RAM e Disco"
         echo "  3) Atualizacoes (pacman -Syu)"
         echo "  4) Atualizacoes automaticas (on/off)"
         echo "  0) Voltar"
         read -rsn1 o; echo
         case $o in
             1) sensors 2>/dev/null || echo "lm-sensors: rode 'sudo sensors-detect'"; pausa ;;
-            2) df -h / /home 2>/dev/null; pausa ;;
+            2)  clear
+               printf '%s── MEMÓRIA RAM ──%s\n' "$FG" "$RST"
+               free -h
+               echo ""
+               printf '%s── ESPAÇO EM DISCO ──%s\n' "$FG" "$RST"
+               df -h / /home 2>/dev/null
+               pausa
+               ;;
             3) sudo pacman -Syu; pausa ;;
             4) auto_updates ;;
             0) return ;;
@@ -213,11 +277,25 @@ acao() {
     esac
 }
 
+# --- NOVO: Lógica de inicialização com Splash Screen ---
+# Se a variável SOC_BOOTED não existir, mostra a animação.
+if [[ -z "${SOC_BOOTED:-}" ]]; then
+    animar_logo
+    export SOC_BOOTED=1
+fi
+
 sel=""
 while true; do
     header
     menu "$sel"
-    printf '\n%sSelecione [0-9]: %s' "$DIM" "$RST"
+    
+    # Centraliza o texto "Selecione"
+    local cols=$(tput cols 2>/dev/null || echo 80)
+    local pad=$(( (cols - 52) / 2 ))
+    if [[ $pad -lt 0 ]]; then pad=0; fi
+    local pad_str=$(printf "%${pad}s" "")
+    
+    printf '\n%s%sSelecione [0-9]: %s' "$pad_str" "$DIM" "$RST"
     read -rsn1 sel
     [[ -z "$sel" ]] && continue
     acao "$sel"
