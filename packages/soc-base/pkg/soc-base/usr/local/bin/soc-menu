@@ -364,15 +364,25 @@ energia() {
     while true; do
         clear
         echo "── ENERGIA ──"
-        echo "  1) Desligar"
-        echo "  2) Reiniciar"
-        echo "  3) Suspender"
+        echo "  1) Bloquear (Tela de Login)"
+        echo "  2) Desligar"
+        echo "  3) Reiniciar"
+        echo "  4) Suspender"
         echo "  0) Voltar"
         read -rsn1 o; echo
         case $o in
-            1) confirmar "Desligar o SOC?"   && { log "energia: poweroff"; sudo systemctl poweroff; } ;;
-            2) confirmar "Reiniciar o SOC?"  && { log "energia: reboot";   sudo systemctl reboot; } ;;
-            3) confirmar "Suspender o SOC?"  && { log "energia: suspend";  sudo systemctl suspend; } ;;
+            1)
+               log "energia: lock"
+               if command -v vlock &>/dev/null; then
+                   vlock -a
+               else
+                   echo "vlock nao instalado. Use 'exit' para sair."
+                   pausa
+               fi
+               ;;
+            2) confirmar "Desligar o SOC?"   && { log "energia: poweroff"; sudo systemctl poweroff; } ;;
+            3) confirmar "Reiniciar o SOC?"  && { log "energia: reboot";   sudo systemctl reboot; } ;;
+            4) confirmar "Suspender o SOC?"  && { log "energia: suspend";  sudo systemctl suspend; } ;;
             0) return ;;
         esac
     done
