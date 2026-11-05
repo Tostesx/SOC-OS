@@ -5,7 +5,7 @@
 ![Interface](https://img.shields.io/badge/interface-TUI-green)
 ![License](https://img.shields.io/badge/license-GPL--2.0-lightgrey)
 
-O **SOC-OS** é uma distribuição Linux minimalista, baseada no Arch Linux, projetada para rodar exclusivamente em interface de terminal (TUI). Inspirado na estética de terminais retrô (como os vistos em Fallout 4), mas com foco absoluto em **confiabilidade, previsibilidade e automação industrial**.
+O **SOC-OS** é uma distribuição Linux minimalista, baseada no Arch Linux, projetada para rodar exclusivamente em interface de terminal (TUI). Inspirado na estética de terminais retrô (como os vistos na série Fallout), mas com foco absoluto em **confiabilidade, previsibilidade e automação industrial**.
 
 O sistema não possui interface gráfica (X11/Wayland) por padrão. Toda a interação, configuração e desenvolvimento ocorrem no terminal, otimizando o uso de hardware e garantindo estabilidade para ambientes de chão de fábrica e sistemas embarcados.
                                                                        -                                                                       
@@ -112,8 +112,8 @@ SOC-OS/
 
 *Nota: O projeto está em estágio Alpha. Recomenda-se o uso em Máquinas Virtuais (VirtualBox ou QEMU/KVM) com UEFI habilitado.*
 
-1. Inicie uma máquina virtual com a ISO oficial do Arch Linux (em modo UEFI).
-2. No terminal do Arch ISO, digite as seguintes instruções:
+1. Inicie uma máquina virtual com a [ISO](https://archlinux.org/download/) oficial do Arch Linux (em modo UEFI).
+2. No terminal do [Arch ISO](https://archlinux.org/download/), digite as seguintes instruções:
    ```bash
    loadkeys br-abnt2
    pacman -Sy git
@@ -122,3 +122,16 @@ SOC-OS/
    chmod +x installer/soc-install.sh
    ./installer/soc-install.sh
    ```
+## 🖥️ Como acessar o Menu
+
+O SOC-OS foi projetado para ser um sistema "Kiosk-ready" (pronto para quiosque industrial), ou seja, o menu deve ser a primeira e principal coisa que você vê.
+
+**Acesso Automático:**
+Ao ligar a máquina, o sistema fará o login automático (via `systemd` + `.bash_profile`), carregará o `tmux` e abrirá o **Menu Principal** centralizado na tela automaticamente.
+
+**Acesso Manual:**
+Se você sair do menu (por exemplo, escolhendo a opção "Bash Livre" ou usando o atalho `Tab`), você pode abrir o menu novamente a qualquer momento digitando o comando:
+
+> ### **`soc-menu`** no bash
+```bash
+soc-menu
