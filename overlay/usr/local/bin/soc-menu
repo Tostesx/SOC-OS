@@ -76,11 +76,10 @@ menu() {
         "1  Desenvolvedor"
         "2  Industrial"
         "3  Navegador Web"
-        "4  Internet        (cabo / wifi / autoconectar)"
-        "5  IntraChat       (mensagens na LAN)"
-        "6  Arquivos        (/home)"
-        "7  Bash Livre"
-        "8  Sistema         (temp / disco / atualizacoes)"
+        "4  IntraChat       (mensagens na LAN)"
+        "5  Arquivos        (/home)"
+        "6  Bash Livre"
+        "7  Sistema         (temp / disco / internet / atualizacoes)"
         "0  Energia         (desligar / reiniciar / suspender)"
     )
     
@@ -322,8 +321,9 @@ sistema() {
         echo "── SISTEMA ──"
         echo "  1) Temperatura"
         echo "  2) Espaco de RAM e Disco"
-        echo "  3) Atualizacoes (pacman -Syu)"
-        echo "  4) Atualizacoes automaticas (on/off)"
+        echo "  3) Internet        (cabo / wifi / autoconectar)"
+        echo "  4) Atualizacoes (pacman -Syu)"
+        echo "  5) Atualizacoes automaticas (on/off)"
         echo "  0) Voltar"
         read -rsn1 o; echo
         case $o in
@@ -336,8 +336,9 @@ sistema() {
                df -h / /home 2>/dev/null
                pausa
                ;;
-            3) sudo pacman -Syu; pausa ;;
-            4) auto_updates ;;
+            3) internet ;;
+            4) sudo pacman -Syu; pausa ;;
+            5) auto_updates ;;
             0) return ;;
         esac
     done
@@ -382,11 +383,10 @@ acao() {
         1) log "menu:dev";        ferramenta vim ;;
         2) log "menu:industrial"; industrial ;;
         3) log "menu:web";        web ;;
-        4) log "menu:internet";   internet ;;
-        5) log "menu:intrachat";  intrachat ;;
-        6) log "menu:arquivos";   ( cd "$HOME" && bash ) ;;
-        7) log "menu:bash";       bash ;;
-        8) log "menu:sistema";    sistema ;;
+        4) log "menu:intrachat";  intrachat ;;
+        5) log "menu:arquivos";   ( cd "$HOME" && bash ) ;;
+        6) log "menu:bash";       bash ;;
+        7) log "menu:sistema";    sistema ;;
         0) log "menu:energia";    energia ;;
     esac
 }
@@ -404,10 +404,10 @@ while true; do
     menu "$sel"
     
     # Centraliza o texto "Selecione"
-    local cols=$(tput cols 2>/dev/null || echo 80)
-    local pad=$(( (cols - 52) / 2 ))
+    cols=$(tput cols 2>/dev/null || echo 80)
+    pad=$(( (cols - 52) / 2 ))
     if [[ $pad -lt 0 ]]; then pad=0; fi
-    local pad_str=$(printf "%${pad}s" "")
+    pad_str=$(printf "%${pad}s" "")
     
     printf '\n%s%sSelecione [0-9]: %s' "$pad_str" "$DIM" "$RST"
     read -rsn1 sel
