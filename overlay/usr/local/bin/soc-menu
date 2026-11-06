@@ -319,16 +319,34 @@ sistema() {
     while true; do
         clear
         echo "── SISTEMA ──"
-        echo "  1) Temperatura"
-        echo "  2) Espaco de RAM e Disco"
-        echo "  3) Internet        (cabo / wifi / autoconectar)"
-        echo "  4) Atualizacoes (pacman -Syu)"
-        echo "  5) Atualizacoes automaticas (on/off)"
+        echo "  1) Habilitar Mouse"
+        echo "  2) Temperatura"
+        echo "  3) Espaco de RAM e Disco"
+        echo "  4) Internet        (cabo / wifi / autoconectar)"
+        echo "  5) Atualizacoes (pacman -Syu)"
+        echo "  6) Atualizacoes automaticas (on/off)"
         echo "  0) Voltar"
         read -rsn1 o; echo
         case $o in
-            1) sensors 2>/dev/null || echo "lm-sensors: rode 'sudo sensors-detect'"; pausa ;;
-            2)  clear
+            1)
+                if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] || [[ "$(tty)" != /dev/tty* ]]; then
+                    echo "Mouse via gpm só funciona em console TTY puro (Ctrl+Alt+F2)."
+                    echo "Neste terminal gráfico, o cursor já é desenhado pelo emulador."
+                else
+                    if systemctl is-active --quiet gpm.service 2>/dev/null; then
+                        sudo systemctl stop gpm.service
+                        echo "Mouse DESABILITADO no console."
+                    else
+                        command -v gpm &>/dev/null || sudo pacman -S --noconfirm gpm
+                        sudo systemctl start gpm.service
+                        echo "Mouse HABILITADO no console (cursor bloco verde)."
+                        printf '\e]P700ff00'
+                    fi
+                fi
+                pausa
+                ;;
+            2) sensors 2>/dev/null || echo "lm-sensors: rode 'sudo sensors-detect'"; pausa ;;
+            3)  clear
                printf '%s── MEMÓRIA RAM ──%s\n' "$FG" "$RST"
                free -h
                echo ""
@@ -336,9 +354,9 @@ sistema() {
                df -h / /home 2>/dev/null
                pausa
                ;;
-            3) internet ;;
-            4) sudo pacman -Syu; pausa ;;
-            5) auto_updates ;;
+            4) internet ;;
+            5) sudo pacman -Syu; pausa ;;
+            6) auto_updates ;;
             0) return ;;
         esac
     done
