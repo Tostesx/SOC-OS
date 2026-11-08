@@ -187,6 +187,7 @@ intrachat() {
 
 industrial() {
     clear
+    printf '\e]P700ff00'
     echo "── INDUSTRIAL ──"
     echo "  1) arduino-cli version"
     echo "  2) cobc --version (GnuCOBOL)"
@@ -205,6 +206,7 @@ industrial() {
 sistema() {
     while true; do
         clear
+        printf '\e]P700ff00'
         echo "── SISTEMA ──"
         echo "  1) Habilitar Mouse"
         echo "  2) Temperatura"
@@ -227,7 +229,6 @@ sistema() {
                         command -v gpm &>/dev/null || sudo pacman -S --noconfirm gpm
                         sudo systemctl start gpm.service
                         echo "Mouse HABILITADO no console (cursor bloco verde)."
-                        printf '\e]P700ff00'
                     fi
                 fi
                 pausa
@@ -268,6 +269,7 @@ auto_updates() {
 energia() {
     while true; do
         clear
+        printf '\e]P700ff00'
         echo "── ENERGIA ──"
         echo "  1) Bloquear (Tela de Login)"
         echo "  2) Desligar"

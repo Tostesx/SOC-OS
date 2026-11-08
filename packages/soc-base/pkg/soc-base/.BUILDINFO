@@ -1,11 +1,11 @@
 format = 2
 pkgname = soc-base
 pkgbase = soc-base
-pkgver = 0.1.0-14
+pkgver = 0.1.0-15
 pkgarch = x86_64
-pkgbuild_sha256sum = c3f3fe69c61289dd0879f1d7174e995bd96298f2caefac78d17eb413bbe27512
+pkgbuild_sha256sum = ce2896cdc583b454b31387f41b818afdeaea6637f725187cd6c4a86ed8a6fc81
 packager = Unknown Packager
-builddate = 1794180519
+builddate = 1794182016
 builddir = /home/tostesx/Documentos/GitHub/SOC-OS/packages/soc-base
 startdir = /home/tostesx/Documentos/GitHub/SOC-OS/packages/soc-base
 buildtool = makepkg
